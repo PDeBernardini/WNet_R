@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon Oct 15 17:38:02 2018
+@author: Tao Lin
+
 Implementation of the W-Net unsupervised image segmentation architecture
 """
 
