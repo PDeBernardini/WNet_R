@@ -1,8 +1,8 @@
-- Add dropout
-- save model parameters
+- Add dropout: done, but problems with Adam optimizer
+- save model parameters: done
 - Test example on trained model 
 - post processing implementation 
 - report the graph results of the metrics for evaluation before post processing 
 - learning curve 
-- add summary
-- number of calssess based on: https://github.com/lwchen6309/unsupervised-image-segmentation-by-WNet-with-NormalizedCut
+- add summary: done
+
