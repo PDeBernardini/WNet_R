@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 """
 Implementation of the W-Net unsupervised image segmentation architecture
 """
@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Block(nn.Module):
-    def __init__(self, in_filters, out_filters, seperable=True):
+    def __init__(self, dropout, in_filters, out_filters, seperable=True):
         super(Block, self).__init__()
         
         if seperable:
@@ -31,33 +31,35 @@ class Block(nn.Module):
         self.batchnorm1=nn.BatchNorm2d(out_filters)
         self.batchnorm2=nn.BatchNorm2d(out_filters)
 
+        self.dropout = nn.Dropout(p=dropout)
+
     def forward(self, x):
         
-        x=self.batchnorm1(self.conv1(x)).clamp(0)
-        
+        x=self.batchnorm1(self.conv1(x)).clamp(0)    
         x=self.batchnorm2(self.conv2(x)).clamp(0)
-        
+        x = self.dropout(x)
+      
         return x
 
 class UEnc(nn.Module):
-    def __init__(self, squeeze, ch_mul=64, in_chans=3):
+    def __init__(self, squeeze, dropout, ch_mul=64, in_chans=3):
         super(UEnc, self).__init__()
         
-        self.enc1=Block(in_chans, ch_mul, seperable=False)
-        self.enc2=Block(ch_mul, 2*ch_mul)
-        self.enc3=Block(2*ch_mul, 4*ch_mul)
-        self.enc4=Block(4*ch_mul, 8*ch_mul)
+        self.enc1=Block(dropout, in_chans, ch_mul, seperable=False)
+        self.enc2=Block(dropout, ch_mul, 2*ch_mul)
+        self.enc3=Block(dropout, 2*ch_mul, 4*ch_mul)
+        self.enc4=Block(dropout, 4*ch_mul, 8*ch_mul)
         
-        self.middle=Block(8*ch_mul, 16*ch_mul)
+        self.middle=Block(dropout, 8*ch_mul, 16*ch_mul)
         
         self.up1=nn.ConvTranspose2d(16*ch_mul, 8*ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec1=Block(16*ch_mul, 8*ch_mul)
+        self.dec1=Block(dropout, 16*ch_mul, 8*ch_mul)
         self.up2=nn.ConvTranspose2d(8*ch_mul, 4*ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec2=Block(8*ch_mul, 4*ch_mul)
+        self.dec2=Block(dropout, 8*ch_mul, 4*ch_mul)
         self.up3=nn.ConvTranspose2d(4*ch_mul, 2*ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec3=Block(4*ch_mul, 2*ch_mul)
+        self.dec3=Block(dropout, 4*ch_mul, 2*ch_mul)
         self.up4=nn.ConvTranspose2d(2*ch_mul, ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec4=Block(2*ch_mul, ch_mul, seperable=False)
+        self.dec4=Block(dropout, 2*ch_mul, ch_mul, seperable=False)
         
         self.final=nn.Conv2d(ch_mul, squeeze, kernel_size=(1, 1))
         
@@ -93,24 +95,24 @@ class UEnc(nn.Module):
         return final
 
 class UDec(nn.Module):
-    def __init__(self, squeeze, ch_mul=64, in_chans=3):
+    def __init__(self, squeeze, dropout, ch_mul=64, in_chans=3):
         super(UDec, self).__init__()
         
-        self.enc1=Block(squeeze, ch_mul, seperable=False)
-        self.enc2=Block(ch_mul, 2*ch_mul)
-        self.enc3=Block(2*ch_mul, 4*ch_mul)
-        self.enc4=Block(4*ch_mul, 8*ch_mul)
+        self.enc1=Block(dropout, squeeze, ch_mul, seperable=False)
+        self.enc2=Block(dropout, ch_mul, 2*ch_mul)
+        self.enc3=Block(dropout, 2*ch_mul, 4*ch_mul)
+        self.enc4=Block(dropout, 4*ch_mul, 8*ch_mul)
         
-        self.middle=Block(8*ch_mul, 16*ch_mul)
+        self.middle=Block(dropout, 8*ch_mul, 16*ch_mul)
         
         self.up1=nn.ConvTranspose2d(16*ch_mul, 8*ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec1=Block(16*ch_mul, 8*ch_mul)
+        self.dec1=Block(dropout, 16*ch_mul, 8*ch_mul)
         self.up2=nn.ConvTranspose2d(8*ch_mul, 4*ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec2=Block(8*ch_mul, 4*ch_mul)
+        self.dec2=Block(dropout, 8*ch_mul, 4*ch_mul)
         self.up3=nn.ConvTranspose2d(4*ch_mul, 2*ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec3=Block(4*ch_mul, 2*ch_mul)
+        self.dec3=Block(dropout, 4*ch_mul, 2*ch_mul)
         self.up4=nn.ConvTranspose2d(2*ch_mul, ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec4=Block(2*ch_mul, ch_mul, seperable=False)
+        self.dec4=Block(dropout, 2*ch_mul, ch_mul, seperable=False)
         
         self.final=nn.Conv2d(ch_mul, in_chans, kernel_size=(1, 1))
         
@@ -146,12 +148,12 @@ class UDec(nn.Module):
         return final
 
 class WNet(nn.Module):
-    def __init__(self, squeeze, ch_mul=64, in_chans=3, out_chans=1000):
+    def __init__(self, squeeze, dropout = 0, ch_mul=64, in_chans=3, out_chans=1000):
         super(WNet, self).__init__()
         if out_chans==1000:
             out_chans=in_chans
-        self.UEnc=UEnc(squeeze, ch_mul, in_chans)
-        self.UDec=UDec(squeeze, ch_mul, out_chans)
+        self.UEnc=UEnc(squeeze, dropout, ch_mul, in_chans)
+        self.UDec=UDec(squeeze, dropout, ch_mul, out_chans)
     def forward(self, x, returns='both'):
         
         enc = self.UEnc(x)

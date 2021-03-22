@@ -6,14 +6,20 @@ import torch.utils.data as Data
 
 
 class dataset_WNet(Data.Dataset):
+
     def __init__(self, config):
         self.image_path = config.datapath
+
         self.transform = transforms.Compose([
           transforms.Resize(config.inputsize),
           transforms.ToTensor()
         ])
-        self.image_names = os.listdir(self.image_path)
 
+        included_extensions = ['jpg','jpeg','png']
+        self.image_names = [i for i in os.listdir(self.image_path)
+                            if any(i.endswith(ext) for ext in included_extensions)]
+        #for clean dataset (ex:VOC2012) this can be substitued with:
+        #self.image_names = os.listdir(self.image_path)
     def __len__(self):
         return len(self.image_names)
 

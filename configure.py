@@ -9,13 +9,7 @@ class Config:
 
       #data configure
       self.mode = mode
-      if (mode == "train"):
-        self.datapath = "/content/gdrive/My Drive/Kaggle/VOC2012/JPEGImages" 
-      elif (mode == "test"):
-        self.datapath = "../BSDS500/data"
-      self.BatchSize = 10
-        #number of images extracted from the image folder simultaneously
-      self.SupBatchSize = self.BatchSize * 5
+      self.BatchSize = 10 #paper set it to 10
       self.Shuffle = True
       self.LoadThread = 4
       self.inputsize = (224,224)
@@ -29,8 +23,14 @@ class Config:
       self.init_lr = 0.003
       self.lr_decay = 0.1
       self.lr_decay_iter = 1000
-      self.max_iter = 50000 
+      self.epochs = 10 #set it to 50 for actual training
       self.psi = 0.5
 
+      #paths configure
+      if (mode == "train"):
+        self.datapath = "../BSDS500/data/images/train" #set this for actual training: "/content/gdrive/My Drive/Kaggle/VOC2012/JPEGImages" 
+      elif (mode == "test"):
+        self.datapath = "../BSDS500/data/images/test"
+      self.saving_path = "./trained_models" 
       #NCut loss configure
         #not implemented yet
