@@ -65,30 +65,21 @@ class UEnc(nn.Module):
         
     def forward(self, x):
         
-        enc1=self.enc1(x)
-        
+        enc1=self.enc1(x) 
         enc2=self.enc2(F.max_pool2d(enc1, (2, 2)))
-        
         enc3=self.enc3(F.max_pool2d(enc2, (2,2)))
-        
         enc4=self.enc4(F.max_pool2d(enc3, (2,2)))
-        
         
         middle=self.middle(F.max_pool2d(enc4, (2,2)))
         
-        
         up1=torch.cat([enc4, self.up1(middle)], 1)
         dec1=self.dec1(up1)
-        
         up2=torch.cat([enc3, self.up2(dec1)], 1)
         dec2=self.dec2(up2)
-        
         up3=torch.cat([enc2, self.up3(dec2)], 1)
         dec3=self.dec3(up3)
-        
         up4=torch.cat([enc1, self.up4(dec3)], 1)
         dec4=self.dec4(up4)
-        
         
         final=self.final(dec4)
         
@@ -119,30 +110,21 @@ class UDec(nn.Module):
     def forward(self, x):
         
         enc1 = self.enc1(x)
-        
         enc2 = self.enc2(F.max_pool2d(enc1, (2, 2)))
-        
         enc3 = self.enc3(F.max_pool2d(enc2, (2,2)))
-        
         enc4 = self.enc4(F.max_pool2d(enc3, (2,2)))
-        
-        
+
         middle = self.middle(F.max_pool2d(enc4, (2,2)))
-        
-        
+
         up1 = torch.cat([enc4, self.up1(middle)], 1)
         dec1 = self.dec1(up1)
-        
         up2 = torch.cat([enc3, self.up2(dec1)], 1)
         dec2 = self.dec2(up2)
-        
         up3 = torch.cat([enc2, self.up3(dec2)], 1)
         dec3 =self.dec3(up3)
-        
         up4 = torch.cat([enc1, self.up4(dec3)], 1)
         dec4 = self.dec4(up4)
-        
-        
+
         final=self.final(dec4)
         
         return final
@@ -154,15 +136,13 @@ class WNet(nn.Module):
             out_chans=in_chans
         self.UEnc=UEnc(squeeze, dropout, ch_mul, in_chans)
         self.UDec=UDec(squeeze, dropout, ch_mul, out_chans)
+
     def forward(self, x, returns='both'):
-        
         enc = self.UEnc(x)
-        
         if returns=='enc':
             return enc
         
         dec=self.UDec(F.softmax(enc, 1))
-        
         if returns=='dec':
             return dec
         
@@ -171,3 +151,7 @@ class WNet(nn.Module):
         
         else:
             raise ValueError('Invalid returns, returns must be in [enc dec both]')
+
+            
+
+            
